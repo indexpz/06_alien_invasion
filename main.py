@@ -1,6 +1,7 @@
-def main():
-    ...
+from AlienInvasion import AlienInvasion
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+	# Initialization game and run
+	ai = AlienInvasion()
+	ai.run_game()
