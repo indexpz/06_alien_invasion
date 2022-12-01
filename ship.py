@@ -1,13 +1,17 @@
 import pygame
+from settings import Settings
 
 
 class Ship:
 	"""„Klasa przeznaczona do zarządzania statkiem kosmicznym."""
 
 	def __init__(self, ai_game):
-		# „Każdy nowy statek kosmiczny pojawia się na dole ekranu.
+		# Inicjalizacja statku kosmicznego i jego położenie początkowe.
 		self.screen = ai_game.screen
 		self.screen_rect = ai_game.screen.get_rect()
+		self.settings = Settings()
+		self.settings = ai_game.settings
+
 
 		# Reading ship image and download a ractangle.
 		self.image = pygame.image.load("images/Ship3.png")
@@ -16,16 +20,27 @@ class Ship:
 		# „Każdy nowy statek kosmiczny pojawia się na dole ekranu.
 		self.rect.midbottom = self.screen_rect.midbottom
 
+		# Położenie statku jest przechowywane w postaci liczby zmiennoprzecinkowej
+		self.x = float(self.rect.x)
+
+
 		# 	 Opcje wskazujące na poruszanie się statku
 		self.moving_right = False
 		self.moving_left = False
 
 	def update(self):
+
 		"""Uaktualnienie położenia statku na podstawie opcji wskazującej na jego ruch"""
 		if self.moving_right:
-			self.rect.x += 1
+			self.rect.x += self.settings.ship_speed
 		if self.moving_left:
-			self.rect.x -= 1
+			self.rect.x -= self.settings.ship_speed
+
+		# Uaktualnienie obiektu rect na podstawie wartości self.x.
+		# self.rect.x = self.x
+
+
+
 
 	def blitme(self):
 		"""Displaying ship in him actual position"""
