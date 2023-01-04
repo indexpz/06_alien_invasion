@@ -3,44 +3,39 @@ from settings import Settings
 
 
 class Ship:
-	"""„Klasa przeznaczona do zarządzania statkiem kosmicznym."""
+	"""Klasa przeznaczona do zarządzania statkiem kosmicznym."""
 
 	def __init__(self, ai_game):
 		# Inicjalizacja statku kosmicznego i jego położenie początkowe.
 		self.screen = ai_game.screen
 		self.screen_rect = ai_game.screen.get_rect()
-		self.settings = Settings()
+		# self.settings = Settings()
 		self.settings = ai_game.settings
 
-
-		# Reading ship image and download a ractangle.
-		self.image = pygame.image.load("images/Ship3.png")
+		# Reading ship image and download a rectangle.
+		self.image = pygame.image.load("images/Ship6_36x60.png")
 		self.rect = self.image.get_rect()
 
-		# „Każdy nowy statek kosmiczny pojawia się na dole ekranu.
+		# Każdy nowy statek kosmiczny pojawia się na dole ekranu.
 		self.rect.midbottom = self.screen_rect.midbottom
 
 		# Położenie statku jest przechowywane w postaci liczby zmiennoprzecinkowej
 		self.x = float(self.rect.x)
-
 
 		# 	 Opcje wskazujące na poruszanie się statku
 		self.moving_right = False
 		self.moving_left = False
 
 	def update(self):
-
 		"""Uaktualnienie położenia statku na podstawie opcji wskazującej na jego ruch"""
-		if self.moving_right:
-			self.rect.x += self.settings.ship_speed
-		if self.moving_left:
-			self.rect.x -= self.settings.ship_speed
+		# Uaktualnienie wartości współrzędnej X statku, a nie jego prostokąta.
+		if self.moving_right and self.rect.right < self.screen_rect.right:
+			self.x += self.settings.ship_speed
+		if self.moving_left and self.rect.left > 0:
+			self.x -= self.settings.ship_speed
 
 		# Uaktualnienie obiektu rect na podstawie wartości self.x.
-		# self.rect.x = self.x
-
-
-
+		self.rect.x = self.x
 
 	def blitme(self):
 		"""Displaying ship in him actual position"""
