@@ -1,4 +1,4 @@
-import pygame
+import pygame 	# NOQA
 from settings import Settings
 
 
@@ -13,11 +13,11 @@ class Ship:
 		self.settings = ai_game.settings
 
 		# Reading ship image and download a rectangle.
-		self.image = pygame.image.load("images/Ship6_36x60.png")
+		self.image = pygame.image.load("images/ship.png")
 		self.rect = self.image.get_rect()
 
 		# Każdy nowy statek kosmiczny pojawia się na dole ekranu.
-		self.rect.midbottom = self.screen_rect.midbottom
+		self.rect.midbottom = self.screen_rect.midbottom # NOQA
 
 		# Położenie statku jest przechowywane w postaci liczby zmiennoprzecinkowej
 		self.x = float(self.rect.x)
@@ -37,6 +37,6 @@ class Ship:
 		# Uaktualnienie obiektu rect na podstawie wartości self.x.
 		self.rect.x = self.x
 
-	def blitme(self):
+	def blitme(self): # NOQA
 		"""Displaying ship in him actual position"""
 		self.screen.blit(self.image, self.rect)
