@@ -1,11 +1,12 @@
 import pygame 	# NOQA
-from settings import Settings
+from pygame.sprite import Sprite
 
 
-class Ship:
+class Ship(Sprite):
 	"""Klasa przeznaczona do zarządzania statkiem kosmicznym."""
 
 	def __init__(self, ai_game):
+		super().__init__()
 		# Inicjalizacja statku kosmicznego i jego położenie początkowe.
 		self.screen = ai_game.screen
 		self.screen_rect = ai_game.screen.get_rect()

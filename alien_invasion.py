@@ -1,6 +1,6 @@
 import sys
 import pygame  # NOQA
-print(pygame.__version__)
+# print(pygame.__version__)
 from time import sleep
 
 from settings import Settings
@@ -98,6 +98,8 @@ class AlienInvasion:
 			self.stats.reset_stats()
 			self.stats.game_active = True
 			self.sb.prep_score()
+			self.sb.prep_level()
+			self.sb.prep_ships()
 			self._start_game()
 			self.settings.initialize_dynamic_settings()
 			# 		Usunięcie list aliens i bullets
@@ -144,6 +146,9 @@ class AlienInvasion:
 			self.bullets.empty()
 			self._create_fleet()
 			self.settings.increase_speed()
+			self.stats.level += 1
+			self.sb.prep_level()
+
 
 	def _update_aliens(self):
 		"""Sprawdzenie, czy flota znajduje się przy krawędzi, a następnie uaktualnienie położenia wszystkich obcych we flocie"""
@@ -201,6 +206,7 @@ class AlienInvasion:
 		if self.stats.ships_left > 0:
 			# Zmniejszenie wartości przechowywanej w ships_left
 			self.stats.ships_left -= 1
+			self.sb.prep_ships()
 
 			# 	Usunięcie zawartości list aliens i bullets.
 			self.aliens.empty()
