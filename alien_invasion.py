@@ -1,10 +1,15 @@
 import sys
 import pygame  # NOQA
+print(pygame.__version__)
+from time import sleep
 
 from settings import Settings
+from game_stats import GameStats
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
+from button import Button
+from scoreboard import Scoreboard
 
 
 class AlienInvasion:
@@ -24,11 +29,16 @@ class AlienInvasion:
 		"""Zdefiniowanie koloru tła"""
 		self.bg_color = self.settings.bg_color
 		pygame.display.set_caption("Inwazja obcych")
+		# Utworzenie egzemplarza przechowującego dane statystyczne dotyczące gry.
+		self.stats = GameStats(self)
+		self.sb = Scoreboard(self)
 		# ship
 		self.ship = Ship(self)
 		self.bullets = pygame.sprite.Group()
 		self.aliens = pygame.sprite.Group()
 		self._create_fleet()
+		# 	Utworzenie przycisku gra
+		self.play_button = Button(self, "Gra")
 
 	def run_game(self):
 		"""Rozpoczęcie pętli głównej gry."""
@@ -36,9 +46,10 @@ class AlienInvasion:
 			# Waiting for user reaction click or press button.
 			self._check_events()
 			# Refreshing screen in every loop
-			self.ship.update()
-			self._update_bullets()
-			self._update_aliens()
+			if self.stats.game_active:
+				self.ship.update()
+				self._update_bullets()
+				self._update_aliens()
 			# print(len(self.bullets))
 			self._update_screen()
 
@@ -51,6 +62,9 @@ class AlienInvasion:
 				self._check_key_down_events(event)
 			elif event.type == pygame.KEYUP:
 				self._check_key_up_events(event)
+			elif event.type == pygame.MOUSEBUTTONDOWN:
+				mouse_pos = pygame.mouse.get_pos()
+				self._check_play_button(mouse_pos)
 
 	def _check_key_down_events(self, event):
 		"""Reakcja na naciśnięcie klawisza"""
@@ -62,6 +76,8 @@ class AlienInvasion:
 			sys.exit()
 		elif event.key == pygame.K_SPACE:
 			self._fire_bullet()
+		elif event.key == pygame.K_g:
+			self._start_game()
 
 	# elif event.key == pygame.K_f:
 	# 	self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -73,6 +89,28 @@ class AlienInvasion:
 			self.ship.moving_right = False
 		elif event.key == pygame.K_LEFT:
 			self.ship.moving_left = False
+
+	def _check_play_button(self, mouse_pos):
+		"""Rozpoczęcie nowej gry po kliknięciu przycisku Gra przez użytkownika."""
+		button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+		if button_clicked and not self.stats.game_active:
+			# Wyzerowanie danych statystycznych
+			self.stats.reset_stats()
+			self.stats.game_active = True
+			self.sb.prep_score()
+			self._start_game()
+			self.settings.initialize_dynamic_settings()
+			# 		Usunięcie list aliens i bullets
+			self.aliens.empty()
+			self.bullets.empty()
+			# 		Utworzenie nowej floty i wyśrodkowanie statku
+			self._create_fleet()
+			self.ship.center_ship()
+			# 		Ukrycie kursora myszy
+			# pygame.mouse.set_visable(False)
+
+	def _start_game(self):
+		self.stats.game_active = True
 
 	def _fire_bullet(self):
 		"""Utworzenie pocisku i dodanie go do grupy pocisków"""
@@ -90,17 +128,32 @@ class AlienInvasion:
 				self.bullets.remove(bullet)
 		# 	Sprawdzenie, czy którykolwiek pocisk trafił obcego.
 		# 	Jeżeli tak, usuwamy zarówno pocisk, jak i obcego.
-		colisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+		self._check_bullet_alien_collision()
 
+	def _check_bullet_alien_collision(self):
+		"""Reakcja na kolizję pomiędzy pociskiem a obcym"""
+		# 	Usunięcie wszystkich pocisków i obcych, między którymi doszło do kolizji.
+		collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+		if collisions:
+			for aliens in collisions.values():
+				self.stats.score += self.settings.alien_points * len(aliens)
+			self.sb.prep_score()
+			self.sb.check_high_score()
 		if not self.aliens:
 			# Pozbycie się istniejących pocisków i utworzenie nowej floty
 			self.bullets.empty()
 			self._create_fleet()
+			self.settings.increase_speed()
 
 	def _update_aliens(self):
 		"""Sprawdzenie, czy flota znajduje się przy krawędzi, a następnie uaktualnienie położenia wszystkich obcych we flocie"""
 		self._check_fleet_edges()
 		self.aliens.update()
+		# 	Wykrywanie kolizji między obcym a statkiem
+		if pygame.sprite.spritecollideany(self.ship, self.aliens):
+			self._ship_hit()
+		# 	Wyszukiwanie obcych docierających do dolnej krawędzi ekranu.
+		self._check_aliens_bottom()
 
 	def _create_fleet(self):
 		"""Tworzy flotę obcych"""
@@ -143,6 +196,33 @@ class AlienInvasion:
 			alien.rect.y += self.settings.fleet_drop_speed
 		self.settings.fleet_direction *= -1
 
+	def _ship_hit(self):
+		"""Reakcja na uderzenie obcego w statek"""
+		if self.stats.ships_left > 0:
+			# Zmniejszenie wartości przechowywanej w ships_left
+			self.stats.ships_left -= 1
+
+			# 	Usunięcie zawartości list aliens i bullets.
+			self.aliens.empty()
+			self.bullets.empty()
+
+			# 	Utworzenie nowej floty i wyśrodkowanie statku
+			self._create_fleet()
+			self.ship.center_ship()
+			# 	Pauza
+			sleep(0.5)
+		else:
+			self.stats.game_active = False
+			pygame.mouse.set_visable(True)
+
+	def _check_aliens_bottom(self):
+		"""Sprawdzanie, czy którykolwiek obcy dotarł do dolnej krawędzi ekranu."""
+		screen_rect = self.screen.get_rect()
+		for alien in self.aliens.sprites():
+			if alien.rect.bottom >= screen_rect.bottom:
+				self._ship_hit()
+				break
+
 	def _update_screen(self):
 		# Uaktualnienie obrazów na ekranie i przejście do nowego ekranu.
 		self.screen.fill(self.bg_color)
@@ -150,6 +230,10 @@ class AlienInvasion:
 		for bullet in self.bullets.sprites():
 			bullet.draw_bullet()  # NOQA
 		self.aliens.draw(self.screen)
-		# self.pilot.blitme()
+		# Wyświetlanie informacji o punktacji
+		self.sb.show_score()
+		# Wyświetlanie przycisku tylko wtedy gdy gra jest nie aktywna
+		if not self.stats.game_active:
+			self.play_button.draw_button()
 		# Display last modifying screen
 		pygame.display.flip()
